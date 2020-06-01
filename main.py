@@ -60,60 +60,60 @@ def creating_cache(w, h):
     return c
 
 
-# def direct_mapped(info, csize):
-#     i_miss = 0
-#     i_hit = 0
-#     d_hit = 0
-#     d_miss = 0
-#     i_replace = 0
-#     i_access = 0
-#     d_access = 0
-#     d_replace = 0
-#     block_size = int(info[0])
-#     words = block_size / 4
-#     cache_rows = int(csize / block_size)
-#     cache = creating_cache(2, cache_rows)
-#     inp = input()
-#     while inp != "":
-#         request = inp.split()
-#         tag = int(get_address(request[1]) / 16)
-#         # print(tag)
-#         block = int(tag % 16)
-#         if cache[block][0] == tag:
-#             # print("hit")
-#             if request[0] == '0':
-#                 d_hit += 1
-#                 d_access += 1
-#             elif request[0] == '2':
-#                 i_hit += 1
-#                 i_access += 1
-#         else:
-#             if cache[block][0] != 'x':
-#                 if request[0] == '0':
-#                     d_replace += 1
-#                     # d_access += 1
-#                 elif request[0] == '2':
-#                     i_replace += 1
-#                     # i_access += 1
-#             cache[block][0] = tag
-#             cache[block][1] = 'a'
-#             # print("miss")
-#             if request[0] == '0':
-#                 d_miss += 1
-#                 # d_access += 1
-#             elif request[0] == '2':
-#                 i_miss += 1
-#                 # i_access += 1
-#         # if request[0] == '0':
-#         #     # d_access += 1
-#         # elif request[0] == '2':
-#         #     i_access += 1
-#         inp = input()
-#         if inp == "":
-#             break
-#     output1(cache_info[2], cache_size, int(cache_info[4]), block_size, cache_info[6], cache_info[8])
-#     output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words)
-#     # print(*cache)
+def direct_mapped(info, csize):
+    i_miss = 0
+    i_hit = 0
+    d_hit = 0
+    d_miss = 0
+    i_replace = 0
+    i_access = 0
+    d_access = 0
+    d_replace = 0
+    block_size = int(info[0])
+    words = block_size / 4
+    cache_rows = int(csize / block_size)
+    cache = creating_cache(2, cache_rows)
+    inp = input()
+    while inp != "":
+        request = inp.split()
+        tag = int(get_address(request[1]) / 16)
+        # print(tag)
+        block = int(tag % 16)
+        if cache[block][0] == tag:
+            # print("hit")
+            if request[0] == '0':
+                d_hit += 1
+                d_access += 1
+            elif request[0] == '2':
+                i_hit += 1
+                i_access += 1
+        else:
+            if cache[block][0] != 'x':
+                if request[0] == '0':
+                    d_replace += 1
+                    # d_access += 1
+                elif request[0] == '2':
+                    i_replace += 1
+                    # i_access += 1
+            cache[block][0] = tag
+            cache[block][1] = 'a'
+            # print("miss")
+            if request[0] == '0':
+                d_miss += 1
+                # d_access += 1
+            elif request[0] == '2':
+                i_miss += 1
+                # i_access += 1
+        # if request[0] == '0':
+        #     # d_access += 1
+        # elif request[0] == '2':
+        #     i_access += 1
+        inp = input()
+        if inp == "":
+            break
+    output1(cache_info[2], cache_size, int(cache_info[4]), block_size, cache_info[6], cache_info[8])
+    output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words)
+    # print(*cache)
 
 
 def associative_cache(info, c_size, associativity_no):
@@ -131,40 +131,45 @@ def associative_cache(info, c_size, associativity_no):
     cache = creating_cache(associativity_no, set_no)
     # print(*cache)
     lru = []
+    dirty = []
     for i in range(set_no):
         temp = []
         lru.append(temp)
+        dirty.append(temp)
     inp = input()
     while inp != "":
         request = inp.split()
         tag = int(get_address(request[1]) / block_size)
         set_address = int(tag % set_no)
-        if str(tag) in cache[set_address]:
+        if str(tag) in lru[set_address]:
             for i in lru[set_address][:]:
                 for i in lru[set_address][:]:
                     if i == str(tag):
                         lru[set_address].remove(i)
         # lru[set_address].remove(str(tag))
-            lru.append(str(tag))
+            lru[set_address].append(str(tag))
             # print("hit")
             if request[0] == '0':
                 d_hit += 1
             elif request[0] == '2':
                 i_hit += 1
-            # print(*lru[set_address])
+            # print(lru[set_address])
         else:
             if len(lru[set_address]) < associativity_no:
                 lru[set_address].append(str(tag))
-                y = cache[set_address].index('x')
-                cache[set_address][y] = str(tag)
+                # y = cache[set_address].index('x')
+                # cache[set_address][y] = str(tag)
                 # print("miss")
                 if request[0] == '0':
                     d_miss += 1
                 elif request[0] == '2':
                     i_miss += 1
+                # print(lru[set_address])
             else:
                 lru[set_address].pop(0)
                 lru[set_address].append(str(tag))
+                # y = cache[set_address].index('x')
+                # cache[set_address][y] = str(tag)
                 # print("miss")
                 if request[0] == '0':
                     d_miss += 1
@@ -172,6 +177,7 @@ def associative_cache(info, c_size, associativity_no):
                 elif request[0] == '2':
                     i_miss += 1
                     i_replace += 1
+                # print(lru[set_address])
         inp = input()
     output1(cache_info[2], cache_size, int(cache_info[4]), block_size, cache_info[6], cache_info[8])
     output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words)
@@ -186,7 +192,6 @@ split = int(cache_info[2])
 # if associativity == 1:
 #     direct_mapped(cache_info, cache_size)
 # else:
-#     associative_cache(cache_info, cache_size, associativity)
 associative_cache(cache_info, cache_size, associativity)
 
 
