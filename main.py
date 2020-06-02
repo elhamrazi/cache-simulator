@@ -25,7 +25,7 @@ def output1(a, size, asc, bs, wp, ap):
     if wp == 'wb':
         print("Write policy: WRITE BACK")
     else:
-        print("Write policy: WRITE THOROUGH")
+        print("Write policy: WRITE THROUGH")
     if ap == "wa":
         print("Allocation policy: WRITE ALLOCATE")
     else:
@@ -33,7 +33,7 @@ def output1(a, size, asc, bs, wp, ap):
     print()
 
 
-def output2(acs, miss, replace, iacs, imiss, ireplace, word, copies):
+def output2(acs, miss, replace, iacs, imiss, ireplace, word, copies, wt):
     print("***CACHE STATISTICS***")
     print("INSTRUCTIONS")
     print("accesses:", iacs)
@@ -55,7 +55,10 @@ def output2(acs, miss, replace, iacs, imiss, ireplace, word, copies):
     # print("miss rate: %.4f" % d_miss_rate, "(hit rate %.4f)" % (1 - d_miss_rate))
     print("replace:", replace)
     print("TRAFFIC (in words)")
-    print("demand fetch:", int((imiss+miss) * word), "\ncopies back:", int(word * copies))
+    if writing_policy == 'wb':
+        print("demand fetch:", int((imiss+miss) * word), "\ncopies back:", int(word * copies))
+    if writing_policy == 'wt':
+        print("demand fetch:", int((imiss + miss) * word), "\ncopies back:", wt)
 
 
 def creating_cache(w, h):
@@ -78,6 +81,7 @@ def unified_cache(info, c_size, associativity_no):
     i_replace = 0
     d_replace = 0
     copy_back = 0
+    wt = 0
     blocksize = int(info[0])
     words = blocksize / 4
     set_no = int(c_size / (blocksize * associativity_no))
@@ -105,6 +109,8 @@ def unified_cache(info, c_size, associativity_no):
             # print("hit")
             if request[0] == '0' or request[0] == '1':
                 d_hit += 1
+                if request[0] == '1':
+                    wt += 1
             elif request[0] == '2':
                 i_hit += 1
             # print(lru)
@@ -118,6 +124,8 @@ def unified_cache(info, c_size, associativity_no):
                 # print("miss")
                 if request[0] == '0' or request[0] == '1':
                     d_miss += 1
+                    if request[0] == '1':
+                        wt += 1
                 elif request[0] == '2':
                     i_miss += 1
                 # print(lru)
@@ -134,6 +142,8 @@ def unified_cache(info, c_size, associativity_no):
                 if request[0] == '0' or request[0] == '1':
                     d_miss += 1
                     d_replace += 1
+                    if request[0] == '1':
+                        wt += 1
                 elif request[0] == '2':
                     i_miss += 1
                     i_replace += 1
@@ -145,7 +155,7 @@ def unified_cache(info, c_size, associativity_no):
             l = list(j.values())
             copy_back += l.count('d')
     output1(cache_info[2], cache_size, int(cache_info[4]), block_size, cache_info[6], cache_info[8])
-    output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words, copy_back)
+    output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words, copy_back, wt)
 
 
 def split_cache(info, c_size, associativity_no):
@@ -156,6 +166,7 @@ def split_cache(info, c_size, associativity_no):
     i_replace = 0
     d_replace = 0
     copy_back = 0
+    wt = 0
     blocksize = int(info[0])
     words = blocksize / 4
     set_no1 = int(int(c_size[2]) / (blocksize * associativity_no))
@@ -210,6 +221,8 @@ def split_cache(info, c_size, associativity_no):
                 # print("hit")
                 if request[0] == '0' or request[0] == '1':
                     d_hit += 1
+                    if request[0] == '1':
+                        wt += 1
                 # print(lru)
             else:
                 cell = {str(tag): 'c'}
@@ -221,6 +234,8 @@ def split_cache(info, c_size, associativity_no):
                     # print("miss")
                     if request[0] == '0' or request[0] == '1':
                         d_miss += 1
+                        if request[0] == '1':
+                            wt += 1
                     # print(lru)
                 else:
                     t = lru1[set_address].pop(0)
@@ -235,6 +250,8 @@ def split_cache(info, c_size, associativity_no):
                     if request[0] == '0' or request[0] == '1':
                         d_miss += 1
                         d_replace += 1
+                        if request[0] == '1':
+                            wt += 1
                     # print(lru)
         elif request[0] == '2':
             tag = int(get_address(request[1]) / block_size)
@@ -267,7 +284,7 @@ def split_cache(info, c_size, associativity_no):
             l = list(j.values())
             copy_back += l.count('d')
     output1(cache_info[2], c_size, int(cache_info[4]), block_size, cache_info[6], cache_info[8])
-    output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words, copy_back)
+    output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words, copy_back, wt)
 
 
 input1 = input()
@@ -276,6 +293,7 @@ cache_split = cache_size.split()
 cache_info = input1.split()
 block_size = int(cache_info[0])
 associativity = int(cache_info[4])
+writing_policy = cache_info[6]
 split = int(cache_info[2])
 # if associativity == 1:
 #     direct_mapped(cache_info, cache_size)
