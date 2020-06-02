@@ -155,6 +155,7 @@ def split_cache(info, c_size, associativity_no):
     d_miss = 0
     i_replace = 0
     d_replace = 0
+    copy_back = 0
     blocksize = int(info[0])
     words = blocksize / 4
     set_no1 = int(int(c_size[2]) / (blocksize * associativity_no))
@@ -170,32 +171,71 @@ def split_cache(info, c_size, associativity_no):
     inp = input()
     while inp != "":
         request = inp.split()
-        if request[0] == '0':
+        if request[0] == '0' or request[0] == '1':
             tag = int(get_address(request[1]) / block_size)
             set_address = int(tag % set_no1)
-            if str(tag) in lru1[set_address]:
+            # if str(tag) in lru1[set_address]:
+            #     for i in lru1[set_address][:]:
+            #         for i in lru1[set_address][:]:
+            #             if i == str(tag):
+            #                 lru1[set_address].remove(i)
+            #     # lru[set_address].remove(str(tag))
+            #     lru1[set_address].append(str(tag))
+            #     # print("hit")
+            #     d_hit += 1
+            #     # print(lru1[set_address])
+            # else:
+            #     if len(lru1[set_address]) < associativity_no:
+            #         lru1[set_address].append(str(tag))
+            #         # print("miss1")
+            #         d_miss += 1
+            #         # print(lru1[set_address])
+            #     else:
+            #         lru1[set_address].pop(0)
+            #         lru1[set_address].append(str(tag))
+            #         # print("miss2")
+            #         d_miss += 1
+            #         d_replace += 1
+            #         # print(lru1[set_address])
+            d = 'x'
+            if check_lru(lru1[set_address], str(tag)):
                 for i in lru1[set_address][:]:
                     for i in lru1[set_address][:]:
-                        if i == str(tag):
+                        if str(tag) in i:
+                            d = i.get(str(tag))
                             lru1[set_address].remove(i)
-                # lru[set_address].remove(str(tag))
-                lru1[set_address].append(str(tag))
+                            if request[0] == '1':
+                                d = 'd'
+                lru1[set_address].append({str(tag): d})
                 # print("hit")
-                d_hit += 1
-                # print(lru1[set_address])
+                if request[0] == '0' or request[0] == '1':
+                    d_hit += 1
+                # print(lru)
             else:
+                cell = {str(tag): 'c'}
                 if len(lru1[set_address]) < associativity_no:
-                    lru1[set_address].append(str(tag))
-                    # print("miss1")
-                    d_miss += 1
-                    # print(lru1[set_address])
+                    if request[0] == '1':
+                        lru1[set_address].append({str(tag): 'd'})
+                    else:
+                        lru1[set_address].append(cell)
+                    # print("miss")
+                    if request[0] == '0' or request[0] == '1':
+                        d_miss += 1
+                    # print(lru)
                 else:
-                    lru1[set_address].pop(0)
-                    lru1[set_address].append(str(tag))
-                    # print("miss2")
-                    d_miss += 1
-                    d_replace += 1
-                    # print(lru1[set_address])
+                    t = lru1[set_address].pop(0)
+                    li = list(t.values())
+                    if li[0] == 'd':
+                        copy_back += 1
+                    if request[0] == '1':
+                        lru1[set_address].append({str(tag): 'd'})
+                    else:
+                        lru1[set_address].append(cell)
+                    # print("miss")
+                    if request[0] == '0' or request[0] == '1':
+                        d_miss += 1
+                        d_replace += 1
+                    # print(lru)
         elif request[0] == '2':
             tag = int(get_address(request[1]) / block_size)
             set_address = int(tag % set_no2)
@@ -222,8 +262,12 @@ def split_cache(info, c_size, associativity_no):
                     i_replace += 1
                     # print(lru[set_address])
         inp = input()
+    for i in lru1:
+        for j in i:
+            l = list(j.values())
+            copy_back += l.count('d')
     output1(cache_info[2], c_size, int(cache_info[4]), block_size, cache_info[6], cache_info[8])
-    output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words, 0)
+    output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words, copy_back)
 
 
 input1 = input()
