@@ -56,11 +56,11 @@ def output2(acs, miss, replace, iacs, imiss, ireplace, word, copies, wt, wa):
     print("replace:", replace)
     print("TRAFFIC (in words)")
     if writing_policy == 'wb' and allocation == 'wa':
-        print("demand fetch:", int((imiss+miss - wa) * word), "\ncopies back:", int(word * copies))
+        print("demand fetch:", int((imiss + miss) * word), "\ncopies back:", int(word * copies))
     if writing_policy == 'wt':
         print("demand fetch:", int((imiss + miss - wa) * word), "\ncopies back:", wt)
     if allocation == 'nw' and writing_policy == 'wb':
-        print("demand fetch:", int((imiss + miss - wa) * word), "\ncopies back:", wt)
+        print("demand fetch:", int((imiss + miss - wa) * word), "\ncopies back:", wa + int(copies * word))
 
 
 def creating_cache(w, h):
@@ -100,20 +100,20 @@ def unified_cache(info, c_size, associativity_no):
         request = inp.split()
         tag = int(get_address(request[1]) / block_size)
         set_address = int(tag % set_no)
-        d = 'x'
+        d = 'c'
         if check_lru(lru[set_address], str(tag)):
             for i in lru[set_address][:]:
                 for i in lru[set_address][:]:
                     if str(tag) in i:
                         d = i.get(str(tag))
                         lru[set_address].remove(i)
-                        if request[0] == '1':
+                        if request[0] == '1' and writing_policy == 'wb':
                             d = 'd'
             lru[set_address].append({str(tag): d})
             # print("hit")
             if request[0] == '0' or request[0] == '1':
                 d_hit += 1
-                if request[0] == '1':
+                if request[0] == '1' and writing_policy == 'wt':
                     wt += 1
             elif request[0] == '2':
                 i_hit += 1
@@ -122,9 +122,9 @@ def unified_cache(info, c_size, associativity_no):
             cell = {str(tag): 'c'}
             if len(lru[set_address]) < associativity_no:
                 if request[0] == '1':
-                    if allocation == "wa":
+                    if allocation == 'wa':
                         lru[set_address].append({str(tag): 'd'})
-                else:
+                if request[0] == '0' or request[0] == '2':
                     lru[set_address].append(cell)
                 # print("miss")
                 if request[0] == '0' or request[0] == '1':
@@ -139,12 +139,13 @@ def unified_cache(info, c_size, associativity_no):
             else:
                 t = lru[set_address].pop(0)
                 li = list(t.values())
+                # print(li)
                 if li[0] == 'd':
                     copy_back += 1
                 if request[0] == '1':
                     if allocation == "wa":
                         lru[set_address].append({str(tag): 'd'})
-                else:
+                if request[0] == '2' or request[0] == '0':
                     lru[set_address].append(cell)
                 # print("miss")
                 if request[0] == '0' or request[0] == '1':
@@ -154,16 +155,18 @@ def unified_cache(info, c_size, associativity_no):
                         wt += 1
                         if allocation == "nw":
                             wa += 1
+                            d_replace -= 1
                 elif request[0] == '2':
                     i_miss += 1
                     i_replace += 1
                 # print(lru)
         inp = input()
     # print(*lru)
-    for i in lru:
-        for j in i:
-            l = list(j.values())
-            copy_back += l.count('d')
+    if allocation == 'wa':
+        for i in lru:
+            for j in i:
+                l = list(j.values())
+                copy_back += l.count('d')
     output1(cache_info[2], cache_size, int(cache_info[4]), block_size, cache_info[6], cache_info[8])
     output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words, copy_back, wt, wa)
 
@@ -196,29 +199,6 @@ def split_cache(info, c_size, associativity_no):
         if request[0] == '0' or request[0] == '1':
             tag = int(get_address(request[1]) / block_size)
             set_address = int(tag % set_no1)
-            # if str(tag) in lru1[set_address]:
-            #     for i in lru1[set_address][:]:
-            #         for i in lru1[set_address][:]:
-            #             if i == str(tag):
-            #                 lru1[set_address].remove(i)
-            #     # lru[set_address].remove(str(tag))
-            #     lru1[set_address].append(str(tag))
-            #     # print("hit")
-            #     d_hit += 1
-            #     # print(lru1[set_address])
-            # else:
-            #     if len(lru1[set_address]) < associativity_no:
-            #         lru1[set_address].append(str(tag))
-            #         # print("miss1")
-            #         d_miss += 1
-            #         # print(lru1[set_address])
-            #     else:
-            #         lru1[set_address].pop(0)
-            #         lru1[set_address].append(str(tag))
-            #         # print("miss2")
-            #         d_miss += 1
-            #         d_replace += 1
-            #         # print(lru1[set_address])
             d = 'x'
             if check_lru(lru1[set_address], str(tag)):
                 for i in lru1[set_address][:]:
@@ -226,7 +206,7 @@ def split_cache(info, c_size, associativity_no):
                         if str(tag) in i:
                             d = i.get(str(tag))
                             lru1[set_address].remove(i)
-                            if request[0] == '1':
+                            if request[0] == '1' and writing_policy == 'wb':
                                 d = 'd'
                 lru1[set_address].append({str(tag): d})
                 # print("hit")
@@ -241,7 +221,7 @@ def split_cache(info, c_size, associativity_no):
                     if request[0] == '1':
                         if allocation == 'wa':
                             lru1[set_address].append({str(tag): 'd'})
-                    else:
+                    elif request[0] == '0':
                         lru1[set_address].append(cell)
                     # print("miss")
                     if request[0] == '0' or request[0] == '1':
