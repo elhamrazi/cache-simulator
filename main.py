@@ -136,37 +136,44 @@ def unified_cache(info, c_size, associativity_no):
                 elif request[0] == '2':
                     i_miss += 1
                 # print(lru)
+                # print("allocation:", wa)
             else:
-                t = lru[set_address].pop(0)
-                li = list(t.values())
-                # print(li)
-                if li[0] == 'd':
-                    copy_back += 1
-                if request[0] == '1':
-                    if allocation == "wa":
-                        lru[set_address].append({str(tag): 'd'})
-                if request[0] == '2' or request[0] == '0':
-                    lru[set_address].append(cell)
-                # print("miss")
-                if request[0] == '0' or request[0] == '1':
-                    d_miss += 1
-                    d_replace += 1
+                if allocation != 'nw' or request[0] != '1':
+                    t = lru[set_address].pop(0)
+                    li = list(t.values())
+                    # print(li)
+                    if li[0] == 'd':
+                        copy_back += 1
                     if request[0] == '1':
-                        wt += 1
-                        if allocation == "nw":
-                            wa += 1
-                            d_replace -= 1
-                elif request[0] == '2':
-                    i_miss += 1
-                    i_replace += 1
+                        if allocation == "wa":
+                            lru[set_address].append({str(tag): 'd'})
+                    if request[0] == '2' or request[0] == '0':
+                        lru[set_address].append(cell)
+                # print("miss")
+                    if request[0] == '0' or request[0] == '1':
+                        d_miss += 1
+                        d_replace += 1
+                        if request[0] == '1' and writing_policy == 'wt':
+                            wt += 1
+                            if allocation == "nw":
+                                wa += 1
+                    elif request[0] == '2':
+                        i_miss += 1
+                        i_replace += 1
+                else:
+                    d_miss += 1
+                    wa += 1
+                    wt += 1
                 # print(lru)
+                # print("allocation:", wa)
         inp = input()
     # print(*lru)
-    if allocation == 'wa':
-        for i in lru:
-            for j in i:
-                l = list(j.values())
-                copy_back += l.count('d')
+    # if allocation == 'wa':
+    for i in lru:
+        for j in i:
+            l = list(j.values())
+            # print(l, l.count('d'))
+            copy_back += l.count('d')
     output1(cache_info[2], cache_size, int(cache_info[4]), block_size, cache_info[6], cache_info[8])
     output2(d_hit + d_miss, d_miss, d_replace, i_miss + i_hit, i_miss, i_replace, words, copy_back, wt, wa)
 
